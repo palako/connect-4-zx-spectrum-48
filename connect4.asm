@@ -62,9 +62,9 @@ org 50000
 
     LOOP_READ_INPUT
         ;draw the player position
-        ld hl, colour_map + (32*9)
+        ld hl, colour_map + (32*9);32*9 is the first screen column of the 9th row
         ld bc, (player_pos)
-        add hl, bc ; move the player to the center column
+        add hl, bc ; move the player to its column
         ld a, (player_color)
         ld (hl), a
         ld hl, last_k
@@ -73,6 +73,8 @@ org 50000
         jr z, MOVE_RIGHT
         cp 111 ; ascii for lower case 'o'
         jr z, MOVE_LEFT
+        cp 32 ; ascii for space
+        jr z, DROP_CHIP
     jr LOOP_READ_INPUT
 ret
 
@@ -107,6 +109,30 @@ MOVE_LEFT
     ld a, (player_pos)
     dec a
     ld (player_pos), a
+    jp CLR_KEY
+ret
+
+DROP_CHIP
+    ; paint current position invisible
+    ld hl, colour_map + (32*9)
+    ld bc, (player_pos)
+    add hl, bc
+    ld (hl), 7Fh ;white/white
+    ld bc, 32
+    add hl, bc
+    ld (hl), 4Ah ;red/blue
+    ld a, 4
+    DROP_ANIMATION
+        ld b, 5
+        STALL 
+            halt
+            djnz STALL
+        ld (hl), 4Fh ;white/blue
+        ld bc, 32
+        add hl, bc
+        ld (hl), 4Ah ;red/blue
+        dec a
+        jr nz, DROP_ANIMATION    
     jp CLR_KEY
 ret
 
