@@ -130,7 +130,7 @@ DROP_CHIP
     push hl;temporary storage of the chip position
     ld hl, column_depth
     ld a, (player_pos)
-    sub 12
+    sub 12;offset of the board on the screen
     ld c, a
     ld b, 0
     add hl, bc
@@ -153,7 +153,17 @@ DROP_CHIP
         ld (hl), a
         ld a, d;restore a
         dec a
-        jr nz, DROP_ANIMATION    
+        jr nz, DROP_ANIMATION
+    ld a, (player_color)
+    ld hl, player2_color
+    cp (hl)
+    jr z, ACTIVATE_PLAYER1
+    ld hl, (player2_color)
+    ld (player_color), hl
+    jp CLR_KEY
+    ACTIVATE_PLAYER1
+    ld hl, (player1_color)
+    ld (player_color), hl
     jp CLR_KEY
 ret
 
@@ -196,6 +206,8 @@ XCOORD defb 10
 YCOORD defb 12
 
 player_pos defb 15, 0; initial position
-player_color defb 7Ah, 4Ah ; 58: red/white 10: red/blue
+player_color defb 7Ah, 4Ah ; red/white, red/blue
+player1_color defb 7Ah, 4Ah ; red/white, red/blue
+player2_color defb 7Eh, 4Eh ; yellow/white, yellow/blue
 column_depth defb 5,5,5,5,5,5,5 ; how many spaces are left in each column
 end 50000
