@@ -1,7 +1,7 @@
 org 50000
     last_k equ 23560 ; alias to keyboard input
     colour_map equ 22528 ; mem pos for the colour of character at (1,1)
-    
+    print equ 8252
     ld a, 127
     ld (23693), a ;set the screen color
     call 3503 ;clear the screen
@@ -19,13 +19,13 @@ org 50000
     ;set up and print the title
     ld de, title
     ld bc, eotitle-title
-    call 8252
+    call print
 
     ;prints an invisible row on top of the board so that only the colour
     ;changes as the players move
     ld de, invisible
     ld bc, eoinvisible-invisible
-    call 8252
+    call print
     
     ;draw the player position
     ld hl, colour_map + (32*9);22816 ; mem pos for the color of (9,1)
@@ -37,7 +37,7 @@ org 50000
     ;setup the board colors
     ld de, board
     ld bc, eoboard-board
-    call 8252
+    call print
 
     ; ;draw the 6x7 board
     ld c, 6; rows
@@ -127,7 +127,7 @@ DROP_CHIP
     
     
     ;calculate how many spaces will the chip drop
-    ld (chip_pos), hl ; save the current chip position
+    push hl;temporary storage of the chip position
     ld hl, column_depth
     ld a, (player_pos)
     sub 12
@@ -136,7 +136,7 @@ DROP_CHIP
     add hl, bc
     ld a, (hl)
     dec (hl)
-    ld hl, (chip_pos)
+    pop hl;restore the chip position
     DROP_ANIMATION
         ; add a small pause (5 halt instructions) to time the animation
         ld b, 5
@@ -197,6 +197,5 @@ YCOORD defb 12
 
 player_pos defb 15, 0; initial position
 player_color defb 7Ah, 4Ah ; 58: red/white 10: red/blue
-column_depth defb 5,3,4,5,5,5,5 ; how many spaces are left in each column
-chip_pos defb 0 ; stores the position of the chip for the animation
+column_depth defb 5,5,5,5,5,5,5 ; how many spaces are left in each column
 end 50000
