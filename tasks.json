@@ -1,0 +1,11 @@
+{
+    "version" : "2.0.0",
+    "tasks" : [
+        {
+            "label" : "pasmo",
+            "type" : "shell",
+            "command" : "/usr/local/bin/pasmo -1 --tapbas ${fileBasenameNoExtension}.asm ${fileBasenameNoExtension}.tap >> debug.txt"
+            
+        }
+    ]
+}
