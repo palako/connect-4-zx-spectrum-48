@@ -40,7 +40,7 @@ org 50000
     call 8252
 
     ; ;draw the 6x7 board
-    ld c, 5; rows
+    ld c, 6; rows
     LOOPROWS
         ld b, 7 ; columns
         LOOPCOLS
@@ -120,17 +120,38 @@ DROP_CHIP
     ld (hl), 7Fh ;white/white
     ld bc, 32
     add hl, bc
-    ld (hl), 4Ah ;red/blue
-    ld a, 4
+
+    ;paint the first row with the player chip
+    ld a, (player_color+1) ;red or yellow over blue
+    ld (hl), a
+    
+    
+    ;calculate how many spaces will the chip drop
+    ld (chip_pos), hl ; save the current chip position
+    ld hl, column_depth
+    ld a, (player_pos)
+    sub 12
+    ld c, a
+    ld b, 0
+    add hl, bc
+    ld a, (hl)
+    dec (hl)
+    ld hl, (chip_pos)
     DROP_ANIMATION
+        ; add a small pause (5 halt instructions) to time the animation
         ld b, 5
         STALL 
             halt
             djnz STALL
+        
+        ; paint the current position white/blue, the next row red/blue, and decrement
         ld (hl), 4Fh ;white/blue
         ld bc, 32
         add hl, bc
-        ld (hl), 4Ah ;red/blue
+        ld d, a ;temporary assignment to keep a
+        ld a, (player_color+1) ;red or yellow over blue
+        ld (hl), a
+        ld a, d;restore a
         dec a
         jr nz, DROP_ANIMATION    
     jp CLR_KEY
@@ -176,5 +197,6 @@ YCOORD defb 12
 
 player_pos defb 15, 0; initial position
 player_color defb 7Ah, 4Ah ; 58: red/white 10: red/blue
-
+column_depth defb 5,3,4,5,5,5,5 ; how many spaces are left in each column
+chip_pos defb 0 ; stores the position of the chip for the animation
 end 50000
