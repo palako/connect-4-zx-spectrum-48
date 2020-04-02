@@ -118,7 +118,7 @@ DROP_CHIP
     ld bc, (player_pos)
     add hl, bc
     ld (hl), 7Fh ;white/white
-    ld bc, 32
+    ld bc, 32;there's 32 characters in a row
     add hl, bc
 
     ;paint the first row with the player chip
@@ -154,16 +154,14 @@ DROP_CHIP
         ld a, d;restore a
         dec a
         jr nz, DROP_ANIMATION
+    
+    ;neat trick to swap colours. red(010) and yellow(110) only differ on the third bit, so xoring with 4 reverses just that bit
     ld a, (player_color)
-    ld hl, player2_color
-    cp (hl)
-    jr z, ACTIVATE_PLAYER1
-    ld hl, (player2_color)
-    ld (player_color), hl
-    jp CLR_KEY
-    ACTIVATE_PLAYER1
-    ld hl, (player1_color)
-    ld (player_color), hl
+    xor 4
+    ld (player_color), a
+    ld a, (player_color+1)
+    xor 4
+    ld (player_color+1), a
     jp CLR_KEY
 ret
 
@@ -207,7 +205,5 @@ YCOORD defb 12
 
 player_pos defb 15, 0; initial position
 player_color defb 7Ah, 4Ah ; red/white, red/blue
-player1_color defb 7Ah, 4Ah ; red/white, red/blue
-player2_color defb 7Eh, 4Eh ; yellow/white, yellow/blue
 column_depth defb 5,5,5,5,5,5,5 ; how many spaces are left in each column
 end 50000
