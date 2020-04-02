@@ -183,9 +183,6 @@ eotransparent equ $
 ; 0 0 0 0 0 0 0 0 -> 0h
 udgs defb 0h, 18h, 3Ch, 7Eh, 7Eh, 3Ch, 18h, 0h
 
-XCOORD defb 10
-YCOORD defb 12
-
 player_pos defb 15, 0; initial position
 player_color defb 7Ah, 4Ah ; red/white, red/blue
 column_depth defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
