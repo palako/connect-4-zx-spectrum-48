@@ -113,30 +113,32 @@ MOVE_LEFT
 ret
 
 DROP_CHIP
-    ; paint current position invisible
-    ld hl, colour_map + (32*9)
-    ld bc, (player_pos)
-    add hl, bc
-    ld (hl), 7Fh ;white/white
-    ld bc, 32;there's 32 characters in a row
-    add hl, bc
-
-    ;paint the first row with the player chip
-    ld a, (player_color+1) ;red or yellow over blue
-    ld (hl), a
-    
-    
     ;calculate how many spaces will the chip drop
-    push hl;temporary storage of the chip position
     ld hl, column_depth
     ld a, (player_pos)
     sub 12;offset of the board on the screen
     ld c, a
     ld b, 0
     add hl, bc
-    ld a, (hl)
+    ld a, 0
+    cp (hl)
+    jr z, CLR_KEY ; exit if there's no spaces left in this column
     dec (hl)
-    pop hl;restore the chip position
+    push hl; save this calculation to free the hl reg 
+    ; paint current position invisible
+    ld hl, colour_map + (32*9)
+    ld bc, (player_pos)
+    add hl, bc
+    ld (hl), 7Fh ;white/white
+    ld bc, 32 ;there's 32 characters in a row
+    add hl, bc
+    ;paint the first row with the player chip
+    ld a, (player_color+1) ;red or yellow over blue
+    ld (hl), a
+    pop bc ;restore the pointer to the remaining free spaces for this column
+    ld a, (bc)
+    cp 0
+    jr z, SWAP_COLOR ; exit if there was only one space left
     DROP_ANIMATION
         ; add a small pause (5 halt instructions) to time the animation
         ld b, 5
@@ -154,7 +156,7 @@ DROP_CHIP
         ld a, d;restore a
         dec a
         jr nz, DROP_ANIMATION
-    
+    SWAP_COLOR
     ;neat trick to swap colours. red(010) and yellow(110) only differ on the third bit, so xoring with 4 reverses just that bit
     ld a, (player_color)
     xor 4
@@ -179,7 +181,7 @@ SETXY
     ld a, (YCOORD)
     rst 16
 ret
-title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 2 red text; 17 6 yellow ink; 22 3 11 position to print(3,11)
+title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 eotitle equ $
 
 board defb 16, 7, 17, 1 ; white ink, blue paper
@@ -205,5 +207,5 @@ YCOORD defb 12
 
 player_pos defb 15, 0; initial position
 player_color defb 7Ah, 4Ah ; red/white, red/blue
-column_depth defb 5,5,5,5,5,5,5 ; how many spaces are left in each column
+column_depth defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
 end 50000
