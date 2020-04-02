@@ -22,9 +22,13 @@ org 50000
     call print
 
     ;prints an invisible row on top of the board so that only the colour
-    ;changes as the players move
-    ld de, invisible
-    ld bc, eoinvisible-invisible
+    ;changes as the players move without having to update the graphics
+    ld de, transparent
+    ld bc, eotransparent-transparent
+    call print
+    
+    ld de, board+7;skip the board colors
+    ld bc, 7;just one row
     call print
     
     ;draw the player position
@@ -34,32 +38,12 @@ org 50000
     ld a, (player_color)
     ld (hl), a
 
-    ;setup the board colors
+    ;print the board
     ld de, board
     ld bc, eoboard-board
     call print
 
-    ; ;draw the 6x7 board
-    ld c, 6; rows
-    LOOPROWS
-        ld b, 7 ; columns
-        LOOPCOLS
-            call SETXY 
-            ld a, 144; position of the first user defined graphic (kind of an ascii code)
-            rst 16
-            ld hl, YCOORD  
-            inc (hl)
-        djnz LOOPCOLS
-        ;reset to the first column of the board
-        ld a, 12
-        ld hl, YCOORD
-        ld (hl), a
-        ;jump to the next row of the board
-        ld hl, XCOORD
-        inc (hl)
-        dec c
-    jr nz, LOOPROWS
-
+    
     LOOP_READ_INPUT
         ;draw the player position
         ld hl, colour_map + (32*9);32*9 is the first screen column of the 9th row
@@ -157,12 +141,12 @@ DROP_CHIP
         dec a
         jr nz, DROP_ANIMATION
     SWAP_COLOR
-    ;neat trick to swap colours. red(010) and yellow(110) only differ on the third bit, so xoring with 4 reverses just that bit
+    ;neat trick to swap colours. red(010) and green(100) only differ on two bits, so xoring with 6 reverses just those
     ld a, (player_color)
-    xor 4
+    xor 6
     ld (player_color), a
     ld a, (player_color+1)
-    xor 4
+    xor 6
     ld (player_color+1), a
     jp CLR_KEY
 ret
@@ -173,24 +157,21 @@ CLR_KEY
     jp LOOP_READ_INPUT
 ret
 
-SETXY
-    ld a, 22
-    rst 16
-    ld a, (XCOORD)
-    rst 16
-    ld a, (YCOORD)
-    rst 16
-ret
 title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 eotitle equ $
 
 board defb 16, 7, 17, 1 ; white ink, blue paper
+      defb 22, 10, 12, 144, 144, 144, 144, 144, 144, 144
+      defb 22, 11, 12, 144, 144, 144, 144, 144, 144, 144
+      defb 22, 12, 12, 144, 144, 144, 144, 144, 144, 144
+      defb 22, 13, 12, 144, 144, 144, 144, 144, 144, 144
+      defb 22, 14, 12, 144, 144, 144, 144, 144, 144, 144
+      defb 22, 15, 12, 144, 144, 144, 144, 144, 144, 144
 eoboard equ $
 
-invisible defb 22, 9, 12 ; position (9, 12)
+transparent defb 22, 9, 12 ; position (9, 12)
           defb 16, 7, 17, 7 ; white ink, white paper
-          defb 144, 144, 144, 144, 144, 144, 144
-eoinvisible equ $
+eotransparent equ $
 
 ; 0 0 0 0 0 0 0 0 -> 0h
 ; 0 0 0 1 1 0 0 0 -> 18h
