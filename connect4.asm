@@ -62,6 +62,12 @@ org 50000
     jr LOOP_READ_INPUT
 ret
 
+CLR_KEY
+    ld hl, last_k
+    ld (hl), 0
+    jp LOOP_READ_INPUT
+ret
+
 MOVE_RIGHT
     ;check right boundary
     ld a, (player_pos)
@@ -122,7 +128,7 @@ DROP_CHIP
     pop bc ;restore the pointer to the remaining free spaces for this column
     ld a, (bc)
     cp 0
-    jr z, SWAP_COLOR ; exit if there was only one space left
+    jr z, SWAP_COLOR ; skip the animation space left
     DROP_ANIMATION
         ; add a small pause (5 halt instructions) to time the animation
         ld b, 5
@@ -141,6 +147,7 @@ DROP_CHIP
         dec a
         jr nz, DROP_ANIMATION
     SWAP_COLOR
+    call DID_WIN
     ;neat trick to swap colours. red(010) and green(100) only differ on two bits, so xoring with 6 reverses just those
     ld a, (player_color)
     xor 6
@@ -151,12 +158,75 @@ DROP_CHIP
     jp CLR_KEY
 ret
 
-CLR_KEY
-    ld hl, last_k
-    ld (hl), 0
-    jp LOOP_READ_INPUT
+;check up to 4 chips to the left from the current position. Board boundaries don't
+;matter since outside the board the color won't be the same as the chips
+DID_WIN
+    ; hl points to the color atriburte of the screen character where the last
+    ; chip was dropped 
+    ld a, (hl)
+    ld c, 1;counter for number of chips in a row 
+    push hl
+    ld b, 4
+    CHECK_LEFT
+        dec hl
+        cp (hl)
+        jr nz, CHECK_RIGHT
+        inc c
+        ld d, a
+        ld a, c
+        cp 4
+        jr z, GAME_OVER
+        ld a, d
+        djnz CHECK_LEFT
+    CHECK_RIGHT
+    pop hl;restore to the position where the chip fell
+    push hl
+    ld b, 4
+    CHECK_RIGHT_
+        inc hl
+        cp (hl)
+        jr nz, CHECK_BOTTOM
+        inc c
+        ld d, a
+        ld a, c
+        cp 4
+        jr z, GAME_OVER
+        ld a, d
+        djnz CHECK_RIGHT_
+    CHECK_BOTTOM
+    pop ix
+    ld c, 1
+    ld b, 4
+     CHECK_BOTTOM_
+        ld a, (ix)
+        cp (ix+32)
+        jr nz, CHECK_D_NW_SE
+        inc c
+        ld a, c
+        cp 4
+        jr z, GAME_OVER
+        ld de, 32
+        add ix, de
+        djnz CHECK_BOTTOM_
+     CHECK_D_NW_SE
 ret
 
+GAME_OVER
+    ld hl, colour_map + (32*10) + 12; mem pos for the color of the top left corner of the board
+    ld c, 6
+    blink_columns
+        ld b, 7
+        blink_rows
+            ld a, (hl)
+            or 80h
+            ld (hl), a
+            inc hl
+            djnz blink_rows
+        ld de, 25 ; 32 - 7 (chars per row - columns in board)
+        add hl, de
+        dec c
+        jr nz, blink_columns
+ 
 title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 eotitle equ $
 
