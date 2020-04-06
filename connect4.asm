@@ -145,7 +145,7 @@ DROP_CHIP
         ld (hl), a
         ld a, d;restore a
         dec a
-        jr nz, DROP_ANIMATION
+    jr nz, DROP_ANIMATION
     SWAP_COLOR
     call DID_WIN
     ;neat trick to swap colours. red(010) and green(100) only differ on two bits, so xoring with 6 reverses just those
@@ -177,7 +177,7 @@ DID_WIN
         cp 4
         jr z, GAME_OVER
         ld a, d
-        djnz CHECK_LEFT
+    djnz CHECK_LEFT
     CHECK_RIGHT
     pop hl;restore to the position where the chip fell
     push hl
@@ -194,10 +194,10 @@ DID_WIN
         ld a, d
         djnz CHECK_RIGHT_
     CHECK_BOTTOM
-    pop ix
+    pop ix;restore the position where the chip fell
     ld c, 1
     ld b, 4
-     CHECK_BOTTOM_
+    CHECK_BOTTOM_
         ld a, (ix)
         cp (ix+32)
         jr nz, CHECK_D_NW_SE
@@ -207,8 +207,8 @@ DID_WIN
         jr z, GAME_OVER
         ld de, 32
         add ix, de
-        djnz CHECK_BOTTOM_
-     CHECK_D_NW_SE
+    djnz CHECK_BOTTOM_
+    CHECK_D_NW_SE
 ret
 
 GAME_OVER
@@ -221,11 +221,11 @@ GAME_OVER
             or 80h
             ld (hl), a
             inc hl
-            djnz blink_rows
+        djnz blink_rows
         ld de, 25 ; 32 - 7 (chars per row - columns in board)
         add hl, de
         dec c
-        jr nz, blink_columns
+    jr nz, blink_columns
  
 title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 eotitle equ $
