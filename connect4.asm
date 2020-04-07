@@ -2,16 +2,18 @@ org 50000
     last_k equ 23560 ; alias to keyboard input
     colour_map equ 22528 ; mem pos for the colour of character at (1,1)
     print equ 8252
+    
+    ;change memory location for user defined graphics (udgs)
+    ld hl, udgs
+    ld (23675), hl
+
+    START    
     ld a, 127
     ld (23693), a ;set the screen color
     call 3503 ;clear the screen
     ld a, 1
     out (254), a ;set the screen border color
 
-    ;change memory location for user defined graphics (udgs)
-    ld hl, udgs
-    ld (23675), hl
-    
     ; open channel to upper screen
     ld a, 2
     call 5633
@@ -43,7 +45,18 @@ org 50000
     ld bc, eoboard-board
     call print
 
-    
+    ;init player position
+    ld a, 15
+    ld (player_pos), a
+    ;empty columns
+    ld hl, column_depth_init
+    ld de, column_depth
+    ld bc, 7
+    ldir
+
+    ;clear any previous key press
+    call CLR_KEY
+
     LOOP_READ_INPUT
         ;draw the player position
         ld hl, colour_map + (32*9);32*9 is the first screen column of the 9th row
@@ -290,9 +303,22 @@ GAME_OVER
         add hl, de
         dec c
     jr nz, blink_columns
+    ;play again?
+    ld de, again
+    ld bc, eoagain-again
+    call print
+    READ_PLAY_AGAIN
+    ld hl, last_k
+    ld a, (hl)
+    cp 121 ; ascii for lower case 'y'
+    jp Z, START
+    jp READ_PLAY_AGAIN
 
 title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 eotitle equ $
+
+again defb 16, 1, 17, 7, 22, 17, 7, "Play again (y/n)?"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
+eoagain equ $
 
 board defb 16, 7, 17, 1 ; white ink, blue paper
       defb 22, 10, 12, 144, 144, 144, 144, 144, 144, 144
@@ -317,7 +343,8 @@ eotransparent equ $
 ; 0 0 0 0 0 0 0 0 -> 0h
 udgs defb 0h, 18h, 3Ch, 7Eh, 7Eh, 3Ch, 18h, 0h
 
-player_pos defb 15, 0; initial position
 player_color defb 7Ah, 4Ah ; red/white, red/blue
+column_depth_init defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
 column_depth defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
+player_pos defb 15, 0; initial position
 end 50000
