@@ -20,13 +20,17 @@ org 50000
 
     ;set up and print the title
     ld de, title
-    ld bc, eotitle-title
+    ld bc, title_size
+    call print
+
+    ld de, controls
+    ld bc, controls_size
     call print
 
     ;prints an invisible row on top of the board so that only the colour
     ;changes as the players move without having to update the graphics
     ld de, transparent
-    ld bc, eotransparent-transparent
+    ld bc, transparent_size
     call print
     
     ld de, board+7;skip the board colors
@@ -42,7 +46,7 @@ org 50000
 
     ;print the board
     ld de, board
-    ld bc, eoboard-board
+    ld bc, board_size
     call print
 
     ;init player position
@@ -305,20 +309,27 @@ GAME_OVER
     jr nz, blink_columns
     ;play again?
     ld de, again
-    ld bc, eoagain-again
+    ld bc, again_size
     call print
     READ_PLAY_AGAIN
     ld hl, last_k
     ld a, (hl)
     cp 121 ; ascii for lower case 'y'
     jp Z, START
+    cp 110 ; ascii for lower case 'n'
+    jp EXIT
     jp READ_PLAY_AGAIN
 
-title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
-eotitle equ $
+EXIT
 
-again defb 16, 1, 17, 7, 22, 17, 7, "Play again (y/n)?"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
-eoagain equ $
+title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
+title_size equ $-title
+
+controls defb 16, 2, 17, 7, 22, 20, 1, "o:left, p:right"
+         defb 22, 21, 1, "space: drop chip"
+controls_size equ $-controls
+again defb 16, 1, 17, 7, 22, 17, 7, "Play again (y/n)?";
+again_size equ $-again
 
 board defb 16, 7, 17, 1 ; white ink, blue paper
       defb 22, 10, 12, 144, 144, 144, 144, 144, 144, 144
@@ -327,11 +338,11 @@ board defb 16, 7, 17, 1 ; white ink, blue paper
       defb 22, 13, 12, 144, 144, 144, 144, 144, 144, 144
       defb 22, 14, 12, 144, 144, 144, 144, 144, 144, 144
       defb 22, 15, 12, 144, 144, 144, 144, 144, 144, 144
-eoboard equ $
+board_size equ $-board
 
 transparent defb 22, 9, 12 ; position (9, 12)
           defb 16, 7, 17, 7 ; white ink, white paper
-eotransparent equ $
+transparent_size equ $-transparent
 
 ; 0 0 0 0 0 0 0 0 -> 0h
 ; 0 0 0 1 1 0 0 0 -> 18h
@@ -344,7 +355,7 @@ eotransparent equ $
 udgs defb 0h, 18h, 3Ch, 7Eh, 7Eh, 3Ch, 18h, 0h
 
 player_color defb 7Ah, 4Ah ; red/white, red/blue
-column_depth_init defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
+column_depth_init defb 6,6,6,6,6,6,6 ; used to restart column_depth if playing again
 column_depth defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
 player_pos defb 15, 0; initial position
 end 50000
