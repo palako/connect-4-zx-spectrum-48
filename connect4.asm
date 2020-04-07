@@ -37,7 +37,15 @@ org 50000
     ld bc, 7;just one row
     call print
     
+    ;empty columns
+    ld hl, column_depth_init
+    ld de, column_depth
+    ld bc, 7
+    ldir
+
     ;draw the player position
+    ld a, 15
+    ld (player_pos), a
     ld hl, colour_map + (32*9);22816 ; mem pos for the color of (9,1)
     ld bc, (player_pos)
     add hl, bc ; move the player to the center column
@@ -49,15 +57,7 @@ org 50000
     ld bc, board_size
     call print
 
-    ;init player position
-    ld a, 15
-    ld (player_pos), a
-    ;empty columns
-    ld hl, column_depth_init
-    ld de, column_depth
-    ld bc, 7
-    ldir
-
+    
     ;clear any previous key press
     call CLR_KEY
 
@@ -179,16 +179,31 @@ ret
 ;check up to 4 chips to the left from the current position. Board boundaries don't
 ;matter since outside the board the color won't be the same as the chips
 DID_WIN
-    ; hl points to the color atriburte of the screen character where the last
+    ; hl points to the color atribute of the screen character where the last
     ; chip was dropped 
     ld a, (hl)
     ld c, 1;counter for number of chips in a row 
     push hl
+    pop ix
+    push ix
+    push ix
+    pop de
+    ld hl, blinking
+    ld (hl), e
+    inc hl
+    ld (hl), d
+    inc hl
     ld b, 4
     CHECK_LEFT
-        dec hl
-        cp (hl)
+        dec ix
+        cp (ix)
         jr nz, CHECK_RIGHT
+        push ix
+        pop de
+        ld (hl), e
+        inc hl
+        ld (hl), d
+        inc hl
         inc c
         ld d, a
         ld a, c
@@ -197,13 +212,21 @@ DID_WIN
         ld a, d
     djnz CHECK_LEFT
     CHECK_RIGHT
-    pop hl;restore to the position where the chip fell
-    push hl
+    pop ix;restore to the position where the chip fell
+    push ix
+    push ix
+    pop de
     ld b, 4
     CHECK_RIGHT_
-        inc hl
-        cp (hl)
+        inc ix
+        cp (ix)
         jr nz, CHECK_BOTTOM
+        push ix
+        pop de
+        ld (hl), e
+        inc hl
+        ld (hl), d
+        inc hl
         inc c
         ld d, a
         ld a, c
@@ -214,35 +237,61 @@ DID_WIN
     CHECK_BOTTOM
     pop ix;restore the position where the chip fell
     push ix
+    push ix
+    pop de
+    ld hl, blinking
+    ld (hl), e
+    inc hl
+    ld (hl), d
+    inc hl
     ld c, 1
     ld b, 4
     CHECK_BOTTOM_
         ld a, (ix)
-        cp (ix+32)
+        ld de, 32
+        add ix, de
+        cp (ix)
         jr nz, CHECK_DIAGONAL_NW_SE
+        push ix
+        pop de
+        ld (hl), e
+        inc hl
+        ld (hl), d
+        inc hl
         inc c
         ld a, c
         cp 4
         jp Z, GAME_OVER
-        ld de, 32
-        add ix, de
     djnz CHECK_BOTTOM_
     CHECK_DIAGONAL_NW_SE
     pop ix;restore the position where the chip fell
     push ix
+    push ix
+    pop de
+    ld hl, blinking
+    ld (hl), e
+    inc hl
+    ld (hl), d
+    inc hl
     ld c, 1
     ld b, 4
     CHECK_DIAGONAL_NW_SE_
         CHECK_NW
             ld a, (ix)
-            cp (ix-33)
+            ld de, -33
+            add ix, de
+            cp (ix)
             jr nz, CHECK_SE
+            push ix
+            pop de
+            ld (hl), e
+            inc hl
+            ld (hl), d
+            inc hl
             inc c
             ld a, c
             cp 4
             jp Z, GAME_OVER
-            ld de, -33
-            add ix, de    
         djnz CHECK_NW
         CHECK_SE
             ld b, 4
@@ -250,63 +299,85 @@ DID_WIN
             push ix
             CHECK_SE_
                 ld a, (ix)
-                cp (ix+33)
+                ld de, 33
+                add ix, de
+                cp (ix)
                 jr nz, CHECK_DIAGONAL_SW_NE
+                push ix
+                pop de
+                ld (hl), e
+                inc hl
+                ld (hl), d
+                inc hl
                 inc c
                 ld a, c
                 cp 4
                 jp Z, GAME_OVER
-                ld de, 33
-                add ix, de
             djnz CHECK_SE_
     CHECK_DIAGONAL_SW_NE
     pop ix;restore the position where the chip fell
     push ix
+    push ix
+    pop de
+    ld hl, blinking
+    ld (hl), e
+    inc hl
+    ld (hl), d
+    inc hl
     ld c, 1
     ld b, 4
     CHECK_SW
         ld a, (ix)
-        cp (ix+31)
+        ld de, 31
+        add ix, de
+        cp (ix)
         jr nz, CHECK_NE
+        push ix
+        pop de
+        ld (hl), e
+        inc hl
+        ld (hl), d
+        inc hl
         inc c
         ld a, c
         cp 4
         jp Z, GAME_OVER
-        ld de, 31
-        add ix, de    
     djnz CHECK_SW
     CHECK_NE
         ld b, 4
         pop ix
         CHECK_NE_
             ld a, (ix)
-            cp (ix-31)
+            ld de, -31
+            add ix, de
+            cp (ix)
             jr nz, EO_DID_WIN
+            push ix
+            pop de
+            ld (hl), e
+            inc hl
+            ld (hl), d
+            inc hl
             inc c
             ld a, c
             cp 4
             jp Z, GAME_OVER
-            ld de, -31
-            add ix, de
         djnz CHECK_NE_
     EO_DID_WIN
 ret
 
 GAME_OVER
-    ld hl, colour_map + (32*10) + 12; mem pos for the color of the top left corner of the board
-    ld c, 6
-    blink_columns
-        ld b, 7
-        blink_rows
-            ld a, (hl)
-            or 80h
-            ld (hl), a
-            inc hl
-        djnz blink_rows
-        ld de, 25 ; 32 - 7 (chars per row - columns in board)
-        add hl, de
-        dec c
-    jr nz, blink_columns
+    ld hl, blinking
+    ld b, 4
+    blink
+        ld e, (hl)
+        inc hl
+        ld d, (hl)
+        ld a, (de)
+        or 80h; set the blink bit active
+        ld (de), a
+        inc hl
+    djnz blink
     ;play again?
     ld de, again
     ld bc, again_size
@@ -316,11 +387,7 @@ GAME_OVER
     ld a, (hl)
     cp 121 ; ascii for lower case 'y'
     jp Z, START
-    cp 110 ; ascii for lower case 'n'
-    jp EXIT
     jp READ_PLAY_AGAIN
-
-EXIT
 
 title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 title_size equ $-title
@@ -341,7 +408,7 @@ board defb 16, 7, 17, 1 ; white ink, blue paper
 board_size equ $-board
 
 transparent defb 22, 9, 12 ; position (9, 12)
-          defb 16, 7, 17, 7 ; white ink, white paper
+            defb 16, 7, 17, 7 ; white ink, white paper
 transparent_size equ $-transparent
 
 ; 0 0 0 0 0 0 0 0 -> 0h
@@ -358,4 +425,5 @@ player_color defb 7Ah, 4Ah ; red/white, red/blue
 column_depth_init defb 6,6,6,6,6,6,6 ; used to restart column_depth if playing again
 column_depth defb 6,6,6,6,6,6,6 ; how many spaces are left in each column
 player_pos defb 15, 0; initial position
+blinking equ $ ; memory address to keep the 4 chips that will blink when the game is over
 end 50000
