@@ -158,22 +158,6 @@ DROP_CHIP
     jp CLR_KEY
 ret
 
-GAME_OVER
-    ld hl, colour_map + (32*10) + 12; mem pos for the color of the top left corner of the board
-    ld c, 6
-    blink_columns
-        ld b, 7
-        blink_rows
-            ld a, (hl)
-            or 80h
-            ld (hl), a
-            inc hl
-        djnz blink_rows
-        ld de, 25 ; 32 - 7 (chars per row - columns in board)
-        add hl, de
-        dec c
-    jr nz, blink_columns
-
 
 ;check up to 4 chips to the left from the current position. Board boundaries don't
 ;matter since outside the board the color won't be the same as the chips
@@ -192,7 +176,7 @@ DID_WIN
         ld d, a
         ld a, c
         cp 4
-        jr z, GAME_OVER
+        jp Z, GAME_OVER
         ld a, d
     djnz CHECK_LEFT
     CHECK_RIGHT
@@ -207,7 +191,7 @@ DID_WIN
         ld d, a
         ld a, c
         cp 4
-        jr z, GAME_OVER
+        jp Z, GAME_OVER
         ld a, d
         djnz CHECK_RIGHT_
     CHECK_BOTTOM
@@ -222,7 +206,7 @@ DID_WIN
         inc c
         ld a, c
         cp 4
-        jr z, GAME_OVER
+        jp Z, GAME_OVER
         ld de, 32
         add ix, de
     djnz CHECK_BOTTOM_
@@ -239,7 +223,7 @@ DID_WIN
             inc c
             ld a, c
             cp 4
-            jr z, GAME_OVER
+            jp Z, GAME_OVER
             ld de, -33
             add ix, de    
         djnz CHECK_NW
@@ -254,7 +238,7 @@ DID_WIN
                 inc c
                 ld a, c
                 cp 4
-                jr z, GAME_OVER_2
+                jp Z, GAME_OVER
                 ld de, 33
                 add ix, de
             djnz CHECK_SE_
@@ -270,7 +254,7 @@ DID_WIN
         inc c
         ld a, c
         cp 4
-        jr z, GAME_OVER_2
+        jp Z, GAME_OVER
         ld de, 31
         add ix, de    
     djnz CHECK_SW
@@ -284,30 +268,28 @@ DID_WIN
             inc c
             ld a, c
             cp 4
-            jr z, GAME_OVER_2
+            jp Z, GAME_OVER
             ld de, -31
             add ix, de
         djnz CHECK_NE_
     EO_DID_WIN
 ret
- 
- ; I'm sure there's a way around this but for now I'll just make a copy of the GAME_OVER
- ; code so that I can jump to it wihtout having the relative jump out of range
- GAME_OVER_2
+
+GAME_OVER
     ld hl, colour_map + (32*10) + 12; mem pos for the color of the top left corner of the board
     ld c, 6
-    blink_columns_2
+    blink_columns
         ld b, 7
-        blink_rows_2
+        blink_rows
             ld a, (hl)
             or 80h
             ld (hl), a
             inc hl
-        djnz blink_rows_2
+        djnz blink_rows
         ld de, 25 ; 32 - 7 (chars per row - columns in board)
         add hl, de
         dec c
-    jr nz, blink_columns_2
+    jr nz, blink_columns
 
 title defb 16, 1, 17, 7, 22, 3, 11, "CONNECT 4"; 16 1 blue text; 17 6 yellow ink; 22 3 11 position to print(3,11)
 eotitle equ $
